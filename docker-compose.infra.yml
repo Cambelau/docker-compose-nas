@@ -1,3 +1,4 @@
+#Run with sudo docker-compose -f docker-compose.infra.yml up -d
 services:
   traefik:
     image: ghcr.io/traefik/traefik:3.4
@@ -41,11 +42,12 @@ services:
       retries: 10
 
   portainer:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ee:latest
     container_name: portainer
     restart: always
     ports:
       - "9000:9000"
+      - "9443:9443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${DATA_ROOT}/portainer:/data
