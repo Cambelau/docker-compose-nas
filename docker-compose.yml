@@ -99,38 +99,6 @@ services:
       - homepage.widget.type=radarr
       - homepage.widget.url=http://radarr:7878/radarr
       - homepage.widget.key=${RADARR_API_KEY}
-  lidarr:
-    image: lscr.io/linuxserver/lidarr
-    container_name: lidarr
-    environment:
-      - PUID=${USER_ID}
-      - PGID=${GROUP_ID}
-      - TZ=${TIMEZONE}
-    volumes:
-      - ${CONFIG_ROOT:-.}/lidarr:/config
-      - ${DATA_ROOT}:/data
-    restart: always
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://127.0.0.1:8686/lidarr/ping"]
-      interval: 1m
-      retries: 10
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.lidarr.rule=(Host(`${HOSTNAME}`) && PathPrefix(`/lidarr`))
-      - traefik.http.routers.lidarr.tls=true
-      - traefik.http.routers.lidarr.tls.certresolver=myresolver
-      - traefik.http.services.lidarr.loadbalancer.server.port=8686
-      - homepage.group=Media
-      - homepage.name=Lidarr
-      - homepage.icon=lidarr.png
-      - homepage.href=/lidarr
-      - homepage.description=Music management
-      - homepage.weight=2
-      - homepage.widget.type=lidarr
-      - homepage.widget.url=http://lidarr:8686/lidarr
-      - homepage.widget.key=${LIDARR_API_KEY}
-    profiles:
-      - lidarr
   bazarr:
     image: lscr.io/linuxserver/bazarr
     container_name: bazarr
@@ -161,41 +129,6 @@ services:
       - homepage.widget.type=bazarr
       - homepage.widget.url=http://bazarr:6767/bazarr
       - homepage.widget.key=${BAZARR_API_KEY}
-  jellyseerr:
-    image: ghcr.io/fallenbagel/jellyseerr:latest
-    container_name: jellyseerr
-    environment:
-      - LOG_LEVEL=debug
-      - TZ=${TIMEZONE}
-    volumes:
-      - ${CONFIG_ROOT:-.}/jellyseerr:/app/config
-    restart: always
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "http://127.0.0.1:5055/api/v1/status",
-          "-qO",
-          "/dev/null",
-        ]
-      interval: 1m
-      retries: 10
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.jellyseerr.rule=(Host(`${JELLYSEERR_HOSTNAME}`))
-      - traefik.http.routers.jellyseerr.tls=true
-      - traefik.http.routers.jellyseerr.tls.certresolver=myresolver
-      - traefik.http.services.jellyseerr.loadbalancer.server.port=5055
-      - homepage.group=Media
-      - homepage.name=JellySeerr
-      - homepage.icon=jellyseerr.png
-      - homepage.href=https://${JELLYSEERR_HOSTNAME}
-      - homepage.description=Content Recommendations and Request Management
-      - homepage.weight=3
-      - homepage.widget.type=jellyseerr
-      - homepage.widget.url=http://jellyseerr:5055
-      - homepage.widget.key=${JELLYSEERR_API_KEY}
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
@@ -409,6 +342,9 @@ services:
       test: ["CMD", "curl", "--fail", "http://127.0.0.1:8096/jellyfin/health"]
       interval: 1m
       retries: 10
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card0:/dev/dri/card0
     labels:
       - traefik.enable=true
       - traefik.http.routers.jellyfin.rule=(Host(`${HOSTNAME}`) && PathPrefix(`/jellyfin`))
@@ -471,9 +407,7 @@ services:
       - RADARR_KEY=${RADARR_API_KEY}
       - SONARR_URL=http://sonarr:8989/sonarr
       - SONARR_KEY=${SONARR_API_KEY}
-      - LIDARR_URL=http://lidarr:8686/lidarr
-      - LIDARR_KEY=${LIDARR_API_KEY}
-      - QBITTORRENT_URL=http://qbittorrent:8080
+      - QBITTORRENT_URL=http://vpn:8080
       - QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME}
       - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD}
       - LOG_LEVEL=${DECLUTTARR_LOG_LEVEL:-INFO}
@@ -537,6 +471,22 @@ services:
       - AUTOHEAL_CONTAINER_LABEL=all
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_ROOT}/portainer:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.portainer.rule=(Host(`${PORTAINER_HOSTNAME}`))
+      - traefik.http.routers.portainer.tls=true
+      - traefik.http.routers.portainer.tls.certresolver=myresolver
+      - traefik.http.services.portainer.loadbalancer.server.port=9000
 
 networks:
   default:
