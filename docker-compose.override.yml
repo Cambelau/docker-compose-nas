@@ -1,3 +1,4 @@
+services:
   gitea:
     image:  docker.gitea.com/gitea:latest
     container_name: gitea
