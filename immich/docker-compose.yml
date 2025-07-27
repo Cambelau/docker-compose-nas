@@ -76,3 +76,8 @@ services:
 
 volumes:
   immich-model-cache:
+
+networks:
+  default:
+    name: docker-compose-nas
+    external: true
