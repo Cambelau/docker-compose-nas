@@ -25,6 +25,7 @@ services:
       - traefik.http.routers.immich.tls=true
       - traefik.http.routers.immich.tls.certresolver=myresolver
       - traefik.http.services.immich.loadbalancer.server.port=2283
+      - traefik.docker.network=docker-compose-nas
       - homepage.group=Apps
       - homepage.name=Immich
       - homepage.icon=immich.png

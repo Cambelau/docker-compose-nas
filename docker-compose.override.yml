@@ -33,7 +33,8 @@ services:
       - traefik.http.routers.gitea.tls=true
       - traefik.http.routers.gitea.tls.certresolver=myresolver
       - traefik.http.services.gitea.loadbalancer.server.port=3005
-      
+      - traefik.docker.network=docker-compose-nas
+
   gitea_database:
     image: docker.io/library/postgres:14
     container_name: gitea_database
