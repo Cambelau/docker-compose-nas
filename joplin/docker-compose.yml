@@ -8,8 +8,8 @@ services:
       - ${CONFIG_ROOT:-.}/joplin/.env
     environment:
       - APP_PORT=22300
-      - APP_BASE_URL=https://${HOSTNAME}/joplin
-      - HOSTNAME=${HOSTNAME}
+      - APP_BASE_URL=https://${NAS_HOSTNAME}/joplin
+      - HOSTNAME=${NAS_HOSTNAME}
       - DB_CLIENT=sqlite3
       - SQLITE_DATABASE=/database/joplin.db
       - STORAGE_DRIVER=Type=Filesystem; Path=/storage
@@ -25,7 +25,7 @@ services:
       retries: 10
     labels:
       - traefik.enable=true
-      - traefik.http.routers.joplin.rule=(Host(`${HOSTNAME}`) && PathPrefix(`/joplin`))
+      - traefik.http.routers.joplin.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/joplin`))
       - traefik.http.routers.joplin.tls=true
       - traefik.http.routers.joplin.tls.certresolver=myresolver
       - traefik.http.routers.joplin.middlewares=joplin-stripprefix
