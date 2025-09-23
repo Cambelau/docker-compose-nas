@@ -16,7 +16,7 @@ services:
       retries: 10
     labels:
       - traefik.enable=true
-      - traefik.http.routers.tandoor.rule=(Host(`${HOSTNAME}`) && PathPrefix(`/recipes`))
+      - traefik.http.routers.tandoor.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/recipes`))
       - traefik.http.routers.tandoor.tls=true
       - traefik.http.routers.tandoor.tls.certresolver=myresolver
       - traefik.http.services.tandoor.loadbalancer.server.port=80
