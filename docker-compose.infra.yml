@@ -102,7 +102,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc:/proc
       - ${CONFIG_ROOT:-.}/komodo-periphery:/etc/komodo
-      - ${PWD}:${PWD}
+      # - ${PWD}:${PWD}
       - ${DATA_ROOT:-/volume1/data}:${DATA_ROOT:-/volume1/data}
     environment:
       - PERIPHERY_ROOT_DIRECTORY=/etc/komodo
