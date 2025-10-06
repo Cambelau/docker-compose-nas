@@ -1,4 +1,6 @@
 *.env
+.env.local
+.env.nas
 .idea
 /homepage/logs
 /homepage/*.yaml
@@ -22,3 +24,13 @@
 /cleanuparr/*
 !/cleanuparr/blacklist.json
 !/cleanuparr/logs/.gitkeep
+
+# Local testing directories
+/config-local
+/data-local
+
+# Komodo configurations
+/komodo-sqlite
+/komodo-repo-cache
+/komodo-periphery
+/komodo-stacks

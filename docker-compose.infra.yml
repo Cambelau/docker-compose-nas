@@ -1,0 +1,138 @@
+# Infrastructure stack - Traefik + Komodo
+# Deploy first: docker compose -f docker-compose.infra.yml up -d
+services:
+  traefik:
+    image: ghcr.io/traefik/traefik:3.4
+    container_name: traefik
+    restart: always
+    environment:
+      - CLOUDFLARE_EMAIL=${CLOUDFLARE_EMAIL}
+      - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
+      - CLOUDFLARE_ZONE_API_TOKEN=${CLOUDFLARE_ZONE_API_TOKEN}
+      - LETS_ENCRYPT_EMAIL=${LETS_ENCRYPT_EMAIL}
+    command:
+      - --ping=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=docker-compose-nas
+      - --entrypoints.web.address=:80
+      - --entrypoints.web-secure.address=:443
+      - --entrypoints.web.http.redirections.entryPoint.to=web-secure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --experimental.plugins.rewrite-body.modulename=github.com/packruler/rewrite-body
+      - --experimental.plugins.rewrite-body.version=v1.2.0
+      - --experimental.plugins.rewriteHeaders.modulename=github.com/XciD/traefik-plugin-rewrite-headers
+      - --experimental.plugins.rewriteHeaders.version=v0.0.3
+      - --certificatesresolvers.myresolver.acme.dnschallenge=${DNS_CHALLENGE:-true}
+      - --certificatesresolvers.myresolver.acme.dnschallenge.provider=${DNS_CHALLENGE_PROVIDER:-cloudflare}
+      - --certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      - --certificatesresolvers.myresolver.acme.caserver=${LETS_ENCRYPT_CA_SERVER:-https://acme-v02.api.letsencrypt.org/directory}
+      - --certificatesresolvers.myresolver.acme.email=${LETS_ENCRYPT_EMAIL}
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${CONFIG_ROOT:-.}/letsencrypt:/letsencrypt
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    extra_hosts:
+      - host.docker.internal:172.17.0.1
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 1m
+      retries: 10
+
+  komodo-ferretdb:
+    image: ghcr.io/ferretdb/ferretdb:1
+    container_name: komodo-ferretdb
+    restart: always
+    labels:
+      - komodo.skip=true
+    volumes:
+      - ${CONFIG_ROOT:-.}/komodo-sqlite:/state
+    environment:
+      - FERRETDB_HANDLER=sqlite
+
+  komodo-core:
+    image: ghcr.io/moghtech/komodo-core:latest
+    container_name: komodo-core
+    restart: always
+    depends_on:
+      - komodo-ferretdb
+    ports:
+      - "9120:9120"
+    volumes:
+      - ${CONFIG_ROOT:-.}/komodo-repo-cache:/repo-cache
+    environment:
+      - KOMODO_DATABASE_ADDRESS=komodo-ferretdb
+      - KOMODO_HOST=${KOMODO_HOST:-http://localhost:9120}
+      - KOMODO_TITLE=${KOMODO_TITLE:-Docker-Compose NAS Komodo}
+      - KOMODO_FIRST_SERVER=http://komodo-periphery:8120
+      - KOMODO_LOCAL_AUTH=${KOMODO_LOCAL_AUTH:-true}
+      - KOMODO_ENABLE_NEW_USERS=${KOMODO_ENABLE_NEW_USERS:-false}
+      - KOMODO_TRANSPARENT_MODE=${KOMODO_TRANSPARENT_MODE:-false}
+      - KOMODO_DISABLE_CONFIRM_DIALOG=${KOMODO_DISABLE_CONFIRM_DIALOG:-false}
+      - KOMODO_MONITORING_INTERVAL=${KOMODO_MONITORING_INTERVAL:-15-sec}
+      - KOMODO_RESOURCE_POLL_INTERVAL=${KOMODO_RESOURCE_POLL_INTERVAL:-5-min}
+      - KOMODO_WEBHOOK_SECRET=${KOMODO_WEBHOOK_SECRET:-}
+      - KOMODO_JWT_SECRET=${KOMODO_JWT_SECRET:-}
+      - KOMODO_DISABLE_USER_REGISTRATION=${KOMODO_DISABLE_USER_REGISTRATION:-false}
+      - KOMODO_DISABLE_NON_ADMIN_CREATE=${KOMODO_DISABLE_NON_ADMIN_CREATE:-false}
+      - KOMODO_JWT_TTL=${KOMODO_JWT_TTL:-1-day}
+      - KOMODO_PASSKEY=${KOMODO_PASSKEY:-default-passkey-change-me}
+      - TZ=${TIMEZONE:-America/New_York}
+      - PERIPHERY_DOCKER_NETWORK=docker-compose-nas
+    labels:
+      - komodo.skip=true
+      - traefik.enable=true
+      - traefik.http.routers.komodo.rule=(Host(`${KOMODO_HOSTNAME}`))
+      - traefik.http.routers.komodo.tls=true
+      - traefik.http.routers.komodo.tls.certresolver=myresolver
+      - traefik.http.services.komodo.loadbalancer.server.port=9120
+      - traefik.docker.network=docker-compose-nas
+
+  komodo-periphery:
+    image: ghcr.io/moghtech/komodo-periphery:latest
+    container_name: komodo-periphery
+    restart: always
+    ports:
+      - "8120:8120"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /proc:/proc
+      - ${CONFIG_ROOT:-.}/komodo-periphery:/etc/komodo
+      - ${PWD}:${PWD}
+      - ${DATA_ROOT:-/volume1/data}:${DATA_ROOT:-/volume1/data}
+    environment:
+      - PERIPHERY_ROOT_DIRECTORY=/etc/komodo
+      - PERIPHERY_PASSKEYS=${KOMODO_PASSKEY:-default-passkey-change-me}
+      - PERIPHERY_SSL_ENABLED=${PERIPHERY_SSL_ENABLED:-false}
+      - PERIPHERY_REPO_DIR=/etc/komodo/repos
+      - PERIPHERY_STACK_DIR=/etc/komodo/stacks
+      - TZ=${TIMEZONE:-America/New_York}
+    labels:
+      - komodo.skip=true
+
+  watchtower:
+    image: ghcr.io/containrrr/watchtower:latest
+    container_name: watchtower
+    restart: always
+    environment:
+      - WATCHTOWER_CLEANUP=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  autoheal:
+    image: willfarrell/autoheal:latest
+    container_name: autoheal
+    restart: always
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=all
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+networks:
+  default:
+    name: docker-compose-nas
+    external: true
