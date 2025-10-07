@@ -68,7 +68,7 @@ services:
       - KOMODO_DATABASE_ADDRESS=komodo-ferretdb
       - KOMODO_HOST=${KOMODO_HOST:-http://localhost:9120}
       - KOMODO_TITLE=${KOMODO_TITLE:-Docker-Compose NAS Komodo}
-      - KOMODO_FIRST_SERVER=http://komodo-periphery:8120
+      - KOMODO_FIRST_SERVER=https://komodo-periphery:8120
       - KOMODO_LOCAL_AUTH=${KOMODO_LOCAL_AUTH:-true}
       - KOMODO_ENABLE_NEW_USERS=${KOMODO_ENABLE_NEW_USERS:-false}
       - KOMODO_TRANSPARENT_MODE=${KOMODO_TRANSPARENT_MODE:-false}
