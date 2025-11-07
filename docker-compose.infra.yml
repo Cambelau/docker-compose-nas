@@ -87,6 +87,7 @@ services:
       - komodo.skip=true
       - traefik.enable=true
       - traefik.http.routers.komodo.rule=(Host(`${KOMODO_HOSTNAME}`))
+      - traefik.http.routers.komodo.middlewares=authentik-forward-auth@docker
       - traefik.http.routers.komodo.tls=true
       - traefik.http.routers.komodo.tls.certresolver=myresolver
       - traefik.http.services.komodo.loadbalancer.server.port=9120
@@ -131,6 +132,126 @@ services:
       - AUTOHEAL_CONTAINER_LABEL=all
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+
+  authentik-postgres:
+    image: docker.io/library/postgres:16-alpine
+    container_name: authentik-postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=${AUTHENTIK_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${AUTHENTIK_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${AUTHENTIK_POSTGRES_DB:-authentik}
+    volumes:
+      - ${CONFIG_ROOT:-.}/authentik/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUTHENTIK_POSTGRES_USER}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    labels:
+      - komodo.skip=true
+
+  authentik-redis:
+    image: docker.io/library/redis:7-alpine
+    container_name: authentik-redis
+    restart: always
+    command: ["--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - ${CONFIG_ROOT:-.}/authentik/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    labels:
+      - komodo.skip=true
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:2024.10
+    container_name: authentik-server
+    restart: always
+    depends_on:
+      authentik-postgres:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+    environment:
+      - AUTHENTIK_POSTGRESQL__HOST=authentik-postgres
+      - AUTHENTIK_POSTGRESQL__USER=${AUTHENTIK_POSTGRES_USER}
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${AUTHENTIK_POSTGRES_PASSWORD}
+      - AUTHENTIK_POSTGRESQL__NAME=${AUTHENTIK_POSTGRES_DB:-authentik}
+      - AUTHENTIK_REDIS__HOST=authentik-redis
+      - AUTHENTIK_REDIS__PORT=6379
+      - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
+      - AUTHENTIK_DISABLE_UPDATE_CHECK=true
+      - AUTHENTIK_ERROR_REPORTING__ENABLED=false
+      - AUTHENTIK_EMAIL__FROM=${AUTHENTIK_EMAIL_FROM}
+      - AUTHENTIK_EMAIL__HOST=${AUTHENTIK_EMAIL_HOST}
+      - AUTHENTIK_EMAIL__PORT=${AUTHENTIK_EMAIL_PORT}
+      - AUTHENTIK_EMAIL__USERNAME=${AUTHENTIK_EMAIL_USERNAME}
+      - AUTHENTIK_EMAIL__PASSWORD=${AUTHENTIK_EMAIL_PASSWORD}
+      - AUTHENTIK_EMAIL__USE_TLS=${AUTHENTIK_EMAIL_USE_TLS}
+      - AUTHENTIK_EMAIL__USE_SSL=${AUTHENTIK_EMAIL_USE_SSL}
+      - AUTHENTIK_OUTPOSTS__PROXY__TRUSTED_IPS=${AUTHENTIK_TRUSTED_IPS:-0.0.0.0/0}
+      - AUTHENTIK_DEFAULT_USER__EMAIL=${AUTHENTIK_DEFAULT_USER_EMAIL:-}
+      - AUTHENTIK_DEFAULT_USER__USERNAME=${AUTHENTIK_DEFAULT_USER_USERNAME:-}
+      - AUTHENTIK_DEFAULT_USER__PASSWORD=${AUTHENTIK_DEFAULT_USER_PASSWORD:-}
+      - TZ=${TIMEZONE:-America/New_York}
+    volumes:
+      - ${CONFIG_ROOT:-.}/authentik/media:/media
+      - ${CONFIG_ROOT:-.}/authentik/custom-templates:/templates
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.authentik.entrypoints=web-secure
+      - traefik.http.routers.authentik.rule=Host(`${AUTHENTIK_HOSTNAME}`)
+      - traefik.http.routers.authentik.tls=true
+      - traefik.http.routers.authentik.tls.certresolver=myresolver
+      - traefik.http.services.authentik.loadbalancer.server.port=9000
+      - traefik.docker.network=docker-compose-nas
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:2024.10
+    container_name: authentik-worker
+    restart: always
+    command: worker
+    depends_on:
+      authentik-postgres:
+        condition: service_healthy
+      authentik-redis:
+        condition: service_healthy
+    environment:
+      - AUTHENTIK_POSTGRESQL__HOST=authentik-postgres
+      - AUTHENTIK_POSTGRESQL__USER=${AUTHENTIK_POSTGRES_USER}
+      - AUTHENTIK_POSTGRESQL__PASSWORD=${AUTHENTIK_POSTGRES_PASSWORD}
+      - AUTHENTIK_POSTGRESQL__NAME=${AUTHENTIK_POSTGRES_DB:-authentik}
+      - AUTHENTIK_REDIS__HOST=authentik-redis
+      - AUTHENTIK_REDIS__PORT=6379
+      - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
+      - AUTHENTIK_DISABLE_UPDATE_CHECK=true
+      - AUTHENTIK_ERROR_REPORTING__ENABLED=false
+      - TZ=${TIMEZONE:-America/New_York}
+    volumes:
+      - ${CONFIG_ROOT:-.}/authentik/media:/media
+      - ${CONFIG_ROOT:-.}/authentik/custom-templates:/templates
+    labels:
+      - komodo.skip=true
+
+  authentik-proxy:
+    image: ghcr.io/goauthentik/proxy:2024.10
+    container_name: authentik-proxy
+    restart: always
+    environment:
+      - AUTHENTIK_HOST=https://${AUTHENTIK_HOSTNAME}
+      - AUTHENTIK_TOKEN=${AUTHENTIK_OUTPOST_TOKEN}
+      - AUTHENTIK_SECRET=${AUTHENTIK_OUTPOST_SECRET}
+      - AUTHENTIK_INSECURE=${AUTHENTIK_PROXY_INSECURE:-false}
+    labels:
+      - traefik.enable=true
+      - traefik.http.services.authentik-proxy.loadbalancer.server.port=9000
+      - traefik.http.middlewares.authentik-forward-auth.forwardauth.address=http://authentik-proxy:9000/outpost.goauthentik.io/auth/traefik
+      - traefik.http.middlewares.authentik-forward-auth.forwardauth.trustForwardHeader=true
+      - traefik.http.middlewares.authentik-forward-auth.forwardauth.authResponseHeaders=X-authentik-username,X-authentik-email,X-authentik-groups
+      - traefik.docker.network=docker-compose-nas
 
 networks:
   default:
