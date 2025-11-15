@@ -429,6 +429,7 @@ services:
     image: docker.n8n.io/n8nio/n8n:latest
     container_name: n8n
     restart: always
+    user: "${USER_ID}:${GROUP_ID}"
     depends_on:
       n8n-postgres:
         condition: service_healthy
