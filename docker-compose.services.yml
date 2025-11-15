@@ -394,7 +394,7 @@ services:
   decluttarr:
     image: ghcr.io/manimatter/decluttarr:latest
     container_name: decluttarr
-    restart: always
+    restart: never
     environment:
       - PUID=${USER_ID}
       - PGID=${GROUP_ID}
