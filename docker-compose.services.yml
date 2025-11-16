@@ -445,6 +445,7 @@ services:
       - QUEUE_BULL_REDIS_HOST=n8n-redis
       - QUEUE_BULL_REDIS_PORT=6379
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_USER_FOLDER=/data
       - N8N_HOST=${NAS_HOSTNAME}
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
@@ -453,7 +454,7 @@ services:
       - WEBHOOK_URL=https://${NAS_HOSTNAME}/n8n/
       - TZ=${TIMEZONE}
     volumes:
-      - ${CONFIG_ROOT:-.}/n8n/data:/home/node/.n8n
+      - ${CONFIG_ROOT:-.}/n8n/data:/data
     labels:
       - traefik.enable=true
       - traefik.http.routers.n8n.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/n8n`))
