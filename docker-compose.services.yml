@@ -410,6 +410,7 @@ services:
       - QUEUE_BULL_REDIS_PORT=6379
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - N8N_USER_FOLDER=/data
+      - HOME=/data
       - N8N_HOST=${NAS_HOSTNAME}
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
