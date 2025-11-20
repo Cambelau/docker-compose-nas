@@ -1,0 +1,56 @@
+{
+  "kind": "collectionType",
+  "collectionName": "agents",
+  "info": {
+    "singularName": "agent",
+    "pluralName": "agents",
+    "displayName": "Agent"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "slug": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "regex": "^[a-z0-9]+(?:(?:-|_)+[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "blocks",
+      "required": true
+    },
+    "live": {
+      "type": "boolean",
+      "default": false
+    },
+    "agent_types": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::agent-type.agent-type"
+    },
+    "order": {
+      "type": "integer",
+      "default": 0
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "allow_details_page": {
+      "type": "boolean",
+      "required": true,
+      "default": false
+    },
+    "content_blocks": {
+      "type": "dynamiczone",
+      "components": ["blog.image-block", "blog.video-block", "blog.text-block"]
+    }
+  }
+}

@@ -462,6 +462,63 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
+  strapi:
+    build:
+      context: .
+      dockerfile: ./strapi/Dockerfile.prod
+      args:
+        NODE_ENV: production
+        SERVICE_NAME: strapi
+    container_name: strapi
+    restart: always
+    depends_on:
+      strapi-postgres:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DATABASE_CLIENT=postgres
+      - DATABASE_HOST=strapi-postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=${STRAPI_POSTGRES_DB:-strapi}
+      - DATABASE_USERNAME=${STRAPI_POSTGRES_USER:-strapi}
+      - DATABASE_PASSWORD=${STRAPI_POSTGRES_PASSWORD}
+      - DATABASE_SSL=false
+      - JWT_SECRET=${STRAPI_JWT_SECRET}
+      - ADMIN_JWT_SECRET=${STRAPI_ADMIN_JWT_SECRET}
+      - API_TOKEN_SALT=${STRAPI_API_TOKEN_SALT}
+      - APP_KEYS=${STRAPI_APP_KEYS}
+      - TRANSFER_TOKEN_SALT=${STRAPI_TRANSFER_TOKEN_SALT}
+      - HOST=0.0.0.0
+      - PORT=1337
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${CONFIG_ROOT:-.}/strapi/uploads:/opt/app/public/uploads
+      - ${CONFIG_ROOT:-.}/strapi/data:/opt/app/.tmp
+    labels:
+      # Route for subdomain: strapi.heronix.org
+      - traefik.enable=true
+      # Route for path: heronix.org/strapi
+      - traefik.http.routers.strapi-path.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/strapi`))
+      - traefik.http.routers.strapi-path.tls=true
+      - traefik.http.routers.strapi-path.tls.certresolver=myresolver
+      - traefik.http.routers.strapi-path.priority=90
+      - traefik.http.routers.strapi-path.middlewares=strapi-stripprefix
+      - traefik.http.middlewares.strapi-stripprefix.stripPrefix.prefixes=/strapi
+  strapi-postgres:
+    image: docker.io/library/postgres:16-alpine
+    container_name: strapi-postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=${STRAPI_POSTGRES_USER:-strapi}
+      - POSTGRES_PASSWORD=${STRAPI_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${STRAPI_POSTGRES_DB:-strapi}
+    volumes:
+      - ${CONFIG_ROOT:-.}/strapi/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${STRAPI_POSTGRES_USER:-strapi}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
