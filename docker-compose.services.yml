@@ -501,7 +501,6 @@ services:
       - traefik.http.routers.strapi-path.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/strapi`))
       - traefik.http.routers.strapi-path.tls=true
       - traefik.http.routers.strapi-path.tls.certresolver=myresolver
-      - traefik.http.routers.strapi-path.priority=90
       - traefik.http.routers.strapi-path.middlewares=strapi-stripprefix
       - traefik.http.middlewares.strapi-stripprefix.stripPrefix.prefixes=/strapi
   strapi-postgres:
@@ -541,7 +540,7 @@ services:
       [sh, -c, "cp -n /app/config/tpl/*.yaml /app/config && node server.js"]
     labels:
       - traefik.enable=true
-      - traefik.http.routers.homepage.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/`))
+      - traefik.http.routers.homepage.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/home`))
       - traefik.http.routers.homepage.tls=true
       - traefik.http.routers.homepage.tls.certresolver=myresolver
       - traefik.http.services.homepage.loadbalancer.server.port=3000
