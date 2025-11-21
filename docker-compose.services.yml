@@ -488,6 +488,7 @@ services:
       - API_TOKEN_SALT=${STRAPI_API_TOKEN_SALT}
       - APP_KEYS=${STRAPI_APP_KEYS}
       - TRANSFER_TOKEN_SALT=${STRAPI_TRANSFER_TOKEN_SALT}
+      - PUBLIC_URL=https://${NAS_HOSTNAME}/strapi
       - HOST=0.0.0.0
       - PORT=1337
       - TZ=${TIMEZONE}
