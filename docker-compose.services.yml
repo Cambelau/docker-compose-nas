@@ -488,7 +488,7 @@ services:
       - API_TOKEN_SALT=${STRAPI_API_TOKEN_SALT}
       - APP_KEYS=${STRAPI_APP_KEYS}
       - TRANSFER_TOKEN_SALT=${STRAPI_TRANSFER_TOKEN_SALT}
-      - PUBLIC_URL=https://${NAS_HOSTNAME}/strapi
+      - PUBLIC_URL=https://${STRAPI_HOSTNAME}
       - HOST=0.0.0.0
       - PORT=1337
       - TZ=${TIMEZONE}
@@ -496,14 +496,11 @@ services:
       - ${CONFIG_ROOT:-.}/strapi/uploads:/opt/app/public/uploads
       - ${CONFIG_ROOT:-.}/strapi/data:/opt/app/.tmp
     labels:
-      # Route for subdomain: strapi.heronix.org
       - traefik.enable=true
-      # Route for path: heronix.org/strapi
-      - traefik.http.routers.strapi-path.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/strapi`))
-      - traefik.http.routers.strapi-path.tls=true
-      - traefik.http.routers.strapi-path.tls.certresolver=myresolver
-      - traefik.http.routers.strapi-path.middlewares=strapi-stripprefix
-      - traefik.http.middlewares.strapi-stripprefix.stripPrefix.prefixes=/strapi
+      - traefik.http.routers.strapi.rule=Host(`${STRAPI_HOSTNAME}`)
+      - traefik.http.routers.strapi.tls=true
+      - traefik.http.routers.strapi.tls.certresolver=myresolver
+      - traefik.http.services.strapi.loadbalancer.server.port=1337
   strapi-postgres:
     image: docker.io/library/postgres:16-alpine
     container_name: strapi-postgres
