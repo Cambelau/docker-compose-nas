@@ -488,7 +488,7 @@ services:
       - API_TOKEN_SALT=${STRAPI_API_TOKEN_SALT}
       - APP_KEYS=${STRAPI_APP_KEYS}
       - TRANSFER_TOKEN_SALT=${STRAPI_TRANSFER_TOKEN_SALT}
-      - PUBLIC_URL=https://${STRAPI_HOSTNAME}
+      - PUBLIC_URL=https://strapi.${NAS_HOSTNAME}
       - HOST=0.0.0.0
       - PORT=1337
       - TZ=${TIMEZONE}
@@ -497,7 +497,7 @@ services:
       - ${CONFIG_ROOT:-.}/strapi/data:/opt/app/.tmp
     labels:
       - traefik.enable=true
-      - traefik.http.routers.strapi.rule=Host(`${STRAPI_HOSTNAME}`)
+      - traefik.http.routers.strapi.rule=Host(`strapi.${NAS_HOSTNAME}`)
       - traefik.http.routers.strapi.tls=true
       - traefik.http.routers.strapi.tls.certresolver=myresolver
       - traefik.http.services.strapi.loadbalancer.server.port=1337
