@@ -290,7 +290,7 @@ services:
       - PUID=${USER_ID}
       - PGID=${GROUP_ID}
       - TZ=${TIMEZONE}
-      - JELLYFIN_PublishedServerUrl=${NAS_HOSTNAME}/jellyfin
+      - JELLYFIN_PublishedServerUrl=https://${NAS_HOSTNAME}/jellyfin
     volumes:
       - ${CONFIG_ROOT:-.}/jellyfin:/config
       - ${DATA_ROOT}:/data
