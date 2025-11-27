@@ -414,7 +414,7 @@ services:
       - PROVIDERS_POCKETID_AUTH_URL=https://auth.${NAS_HOSTNAME}/authorize
       - PROVIDERS_POCKETID_TOKEN_URL=https://auth.${NAS_HOSTNAME}/api/oidc/token
       - PROVIDERS_POCKETID_USER_INFO_URL=https://auth.${NAS_HOSTNAME}/api/oidc/userinfo
-      - PROVIDERS_POCKETID_REDIRECT_URL=https://auth.${NAS_HOSTNAME}/api/oauth/callback/tinyauth
+      - PROVIDERS_POCKETID_REDIRECT_URL=https:/${NAS_HOSTNAME}/api/oauth/callback/tinyauth
       - PROVIDERS_POCKETID_SCOPES=openid email profile groups
     labels:
       - traefik.enable=true
