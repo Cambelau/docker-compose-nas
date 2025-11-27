@@ -403,7 +403,7 @@ services:
       timeout: 5s
       retries: 5
   tinyauth:
-    image: ghcr.io/gethomepage/tinyauth:v4
+    image: ghcr.io/gethomepage/tinyauth:v4.1.0
     container_name: tinyauth
     restart: always
     environment:
