@@ -26,4 +26,21 @@ export default ({ env }) => ({
             sizeLimit: 250 * 1024 * 1024, // 250MB
         },
     },
+    // Enable internationalization plugin for multilingual content
+    i18n: {
+        enabled: true,
+        config: {
+            defaultLocale: 'fr',
+            locales: ['fr', 'en', 'ar']
+        }
+    },
+    // Enable upload plugin for media management
+    'users-permissions': {
+        enabled: true,
+        config: {
+            jwt: {
+                expiresIn: '30d'
+            }
+        }
+    }
 });
