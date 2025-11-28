@@ -4,7 +4,7 @@
 
 import { factories } from '@strapi/strapi'
 
-export default factories.createCoreController('api::portfolio-item.portfolio-item', ({ strapi }) => ({
+export default factories.createCoreController('api::portfolio-item.portfolio-item' as any, ({ strapi }) => ({
   // Custom controller methods can be added here
   
   async find(ctx) {
@@ -21,11 +21,16 @@ export default factories.createCoreController('api::portfolio-item.portfolio-ite
             media: true
           }
         },
-        ...query.populate,
+        ...(query.populate && typeof query.populate === 'object' ? query.populate : {}),
       },
     };
 
-    const { data, meta } = await strapi.entityService.findMany('api::portfolio-item.portfolio-item', populateQuery);
+    const data = await strapi.entityService.findMany('api::portfolio-item.portfolio-item' as any, populateQuery);
+    
+    // Use sanitized query for count
+    const countQuery = { ...query };
+    delete countQuery.populate;
+    const meta = { total: await strapi.db.query('api::portfolio-item.portfolio-item').count(countQuery) };
 
     return { data, meta };
   },
@@ -45,11 +50,11 @@ export default factories.createCoreController('api::portfolio-item.portfolio-ite
           }
         },
         seo: true,
-        ...query.populate,
+        ...(query.populate && typeof query.populate === 'object' ? query.populate : {}),
       },
     };
 
-    const data = await strapi.entityService.findOne('api::portfolio-item.portfolio-item', id, populateQuery);
+    const data = await strapi.entityService.findOne('api::portfolio-item.portfolio-item' as any, id, populateQuery);
 
     return { data };
   },
@@ -63,7 +68,7 @@ export default factories.createCoreController('api::portfolio-item.portfolio-ite
       filters: {
         featured: true,
         publishedAt: { $notNull: true },
-        ...query.filters,
+        ...(query.filters && typeof query.filters === 'object' ? query.filters : {}),
       },
       populate: {
         media: true,
@@ -72,11 +77,21 @@ export default factories.createCoreController('api::portfolio-item.portfolio-ite
             media: true
           }
         },
-        ...query.populate,
+        ...(query.populate && typeof query.populate === 'object' ? query.populate : {}),
       },
     };
 
-    const { data, meta } = await strapi.entityService.findMany('api::portfolio-item.portfolio-item', populateQuery);
+    const data = await strapi.entityService.findMany('api::portfolio-item.portfolio-item' as any, populateQuery);
+    
+    // Use sanitized query for count
+    const countQuery = { 
+      filters: {
+        featured: true,
+        publishedAt: { $notNull: true },
+        ...(query.filters && typeof query.filters === 'object' ? query.filters : {}),
+      }
+    };
+    const meta = { total: await strapi.db.query('api::portfolio-item.portfolio-item').count(countQuery) };
 
     return { data, meta };
   },
@@ -90,7 +105,7 @@ export default factories.createCoreController('api::portfolio-item.portfolio-ite
       filters: {
         seasonal: true,
         publishedAt: { $notNull: true },
-        ...query.filters,
+        ...(query.filters && typeof query.filters === 'object' ? query.filters : {}),
       },
       populate: {
         media: true,
@@ -99,11 +114,21 @@ export default factories.createCoreController('api::portfolio-item.portfolio-ite
             media: true
           }
         },
-        ...query.populate,
+        ...(query.populate && typeof query.populate === 'object' ? query.populate : {}),
       },
     };
 
-    const { data, meta } = await strapi.entityService.findMany('api::portfolio-item.portfolio-item', populateQuery);
+    const data = await strapi.entityService.findMany('api::portfolio-item.portfolio-item' as any, populateQuery);
+    
+    // Use sanitized query for count
+    const countQuery = { 
+      filters: {
+        seasonal: true,
+        publishedAt: { $notNull: true },
+        ...(query.filters && typeof query.filters === 'object' ? query.filters : {}),
+      }
+    };
+    const meta = { total: await strapi.db.query('api::portfolio-item.portfolio-item').count(countQuery) };
 
     return { data, meta };
   }
