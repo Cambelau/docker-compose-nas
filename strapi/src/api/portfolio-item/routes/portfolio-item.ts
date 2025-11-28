@@ -7,10 +7,10 @@ import { factories } from '@strapi/strapi';
 export default factories.createCoreRouter('api::portfolio-item.portfolio-item' as any, {
   config: {
     find: {
-      middlewares: ['api::portfolio-item.populate-middleware'],
+      middlewares: [],
     },
     findOne: {
-      middlewares: ['api::portfolio-item.populate-middleware'],
+      middlewares: [],
     },
   },
 });
