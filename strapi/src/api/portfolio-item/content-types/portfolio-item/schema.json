@@ -16,7 +16,7 @@
     }
   },
   "attributes": {
-    "title": {
+    "titre": {
       "type": "string",
       "required": true,
       "maxLength": 200,
@@ -35,7 +35,7 @@
         }
       }
     },
-    "story": {
+    "histoire": {
       "type": "richtext",
       "required": false,
       "pluginOptions": {
@@ -44,7 +44,7 @@
         }
       }
     },
-    "materials": {
+    "materiaux": {
       "type": "string",
       "required": false,
       "maxLength": 255,
@@ -64,7 +64,7 @@
         }
       }
     },
-    "dateCreated": {
+    "dateCreation": {
       "type": "date",
       "required": false,
       "pluginOptions": {
@@ -73,7 +73,7 @@
         }
       }
     },
-    "media": {
+    "medias": {
       "type": "media",
       "multiple": true,
       "required": true,
@@ -84,31 +84,30 @@
         }
       }
     },
-    "featured": {
-      "type": "boolean",
-      "default": false,
-      "required": false,
-      "pluginOptions": {
-        "i18n": {
-          "localized": false
-        }
-      }
-    },
-    "seasonal": {
-      "type": "boolean",
-      "default": false,
-      "required": false,
-      "pluginOptions": {
-        "i18n": {
-          "localized": false
-        }
-      }
-    },
-    "status": {
+    "categorie": {
       "type": "enumeration",
-      "enum": ["draft", "published"],
-      "default": "draft",
+      "enum": ["vetement", "art", "accessoires"],
       "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "statut": {
+      "type": "enumeration",
+      "enum": ["exposition", "a-vendre", "vendu", "sur-commande"],
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "collectionActuelle": {
+      "type": "boolean",
+      "default": false,
+      "required": false,
       "pluginOptions": {
         "i18n": {
           "localized": false
@@ -117,18 +116,8 @@
     },
     "slug": {
       "type": "uid",
-      "targetField": "title",
+      "targetField": "titre",
       "required": false,
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      }
-    },
-    "seo": {
-      "type": "component",
-      "repeatable": false,
-      "component": "shared.seo",
       "pluginOptions": {
         "i18n": {
           "localized": true
