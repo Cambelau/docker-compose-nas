@@ -11,14 +11,14 @@ export default factories.createCoreController('api::portfolio-item.portfolio-ite
     // Add custom logic before calling default find
     const { query } = ctx;
 
-    // Default population for media and localizations
+    // Default population for medias and localizations
     const populateQuery = {
       ...query,
       populate: {
-        media: true,
+        medias: true,
         localizations: {
           populate: {
-            media: true
+            medias: true
           }
         },
         ...(query.populate && typeof query.populate === 'object' ? query.populate : {}),
@@ -43,10 +43,10 @@ export default factories.createCoreController('api::portfolio-item.portfolio-ite
     const populateQuery = {
       ...query,
       populate: {
-        media: true,
+        medias: true,
         localizations: {
           populate: {
-            media: true
+            medias: true
           }
         },
         seo: true,
@@ -71,10 +71,10 @@ export default factories.createCoreController('api::portfolio-item.portfolio-ite
         ...(query.filters && typeof query.filters === 'object' ? query.filters : {}),
       },
       populate: {
-        media: true,
+        medias: true,
         localizations: {
           populate: {
-            media: true
+            medias: true
           }
         },
         ...(query.populate && typeof query.populate === 'object' ? query.populate : {}),
@@ -108,10 +108,10 @@ export default factories.createCoreController('api::portfolio-item.portfolio-ite
         ...(query.filters && typeof query.filters === 'object' ? query.filters : {}),
       },
       populate: {
-        media: true,
+        medias: true,
         localizations: {
           populate: {
-            media: true
+            medias: true
           }
         },
         ...(query.populate && typeof query.populate === 'object' ? query.populate : {}),

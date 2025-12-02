@@ -11,10 +11,10 @@ export default factories.createCoreService('api::portfolio-item.portfolio-item' 
     return await strapi.entityService.findMany('api::portfolio-item.portfolio-item' as any, {
       ...params,
       populate: {
-        media: true,
+        medias: true,
         localizations: {
           populate: {
-            media: true
+            medias: true
           }
         }
       },
@@ -25,10 +25,10 @@ export default factories.createCoreService('api::portfolio-item.portfolio-item' 
     return await strapi.entityService.findOne('api::portfolio-item.portfolio-item' as any, id, {
       ...params,
       populate: {
-        media: true,
+        medias: true,
         localizations: {
           populate: {
-            media: true
+            medias: true
           }
         },
         seo: true
@@ -45,10 +45,10 @@ export default factories.createCoreService('api::portfolio-item.portfolio-item' 
         ...(params.filters && typeof params.filters === 'object' ? params.filters : {}),
       },
       populate: {
-        media: true,
+        medias: true,
         localizations: {
           populate: {
-            media: true
+            medias: true
           }
         }
       },
@@ -64,10 +64,10 @@ export default factories.createCoreService('api::portfolio-item.portfolio-item' 
         ...(params.filters && typeof params.filters === 'object' ? params.filters : {}),
       },
       populate: {
-        media: true,
+        medias: true,
         localizations: {
           populate: {
-            media: true
+            medias: true
           }
         }
       },
@@ -82,10 +82,10 @@ export default factories.createCoreService('api::portfolio-item.portfolio-item' 
         ...(params.filters && typeof params.filters === 'object' ? params.filters : {}),
       },
       populate: {
-        media: true,
+        medias: true,
         localizations: {
           populate: {
-            media: true
+            medias: true
           }
         }
       },
