@@ -209,6 +209,44 @@ services:
       - RADARR__BLOCK__PATH=/usr/blacklist.json
       - RADARR__INSTANCES__0__URL=http://radarr:7878/radarr
       - RADARR__INSTANCES__0__APIKEY=${RADARR_API_KEY}
+  qbit_manage:
+    image: ghcr.io/stuffanthings/qbit_manage:latest
+    container_name: qbit_manage
+    volumes:
+      - ${CONFIG_ROOT:-.}/qbit_manage:/config:rw
+      - ${DOWNLOAD_ROOT}:/data/torrents:rw
+      - ${CONFIG_ROOT:-.}/qbittorrent:/qbittorrent:ro
+    environment:
+      - TZ=${TIMEZONE}
+      # Scheduler Configuration
+      - QBT_RUN=false
+      - QBT_SCHEDULE=1440
+      - QBT_CONFIG_DIR=/config
+      - QBT_LOGFILE=qbit_manage.log
+      # Command Flags
+      - QBT_RECHECK=false
+      - QBT_CAT_UPDATE=false
+      - QBT_TAG_UPDATE=false
+      - QBT_REM_UNREGISTERED=false
+      - QBT_REM_ORPHANED=false
+      - QBT_TAG_TRACKER_ERROR=false
+      - QBT_TAG_NOHARDLINKS=false
+      - QBT_SHARE_LIMITS=false
+      - QBT_SKIP_CLEANUP=false
+      - QBT_DRY_RUN=true
+      - QBT_STARTUP_DELAY=0
+      - QBT_SKIP_QB_VERSION_CHECK=false
+      - QBT_DEBUG=false
+      - QBT_TRACE=false
+      # Logging Configuration
+      - QBT_LOG_LEVEL=INFO
+      - QBT_LOG_SIZE=10
+      - QBT_LOG_COUNT=5
+      - QBT_DIVIDER==
+      - QBT_WIDTH=100
+    restart: on-failure:2
+    profiles:
+      - qbit_manage
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:latest
     container_name: sabnzbd
@@ -447,7 +485,7 @@ services:
       - PROVIDERS_POCKETID_CLIENT_ID=${TINY_AUTH_CLIENT_ID}
       - PROVIDERS_POCKETID_CLIENT_SECRET=${TINY_AUTH_CLIENT_SECRET}
       - PROVIDERS_POCKETID_AUTH_URL=https://${NAS_HOSTNAME}/authorize
-      - PROVIDERS_POCKETID_TOKEN_URL=https://.${NAS_HOSTNAME}/api/oidc/token
+      - PROVIDERS_POCKETID_TOKEN_URL=https://${NAS_HOSTNAME}/api/oidc/token
       - PROVIDERS_POCKETID_USER_INFO_URL=https://${NAS_HOSTNAME}/api/oidc/userinfo
       - PROVIDERS_POCKETID_REDIRECT_URL=https://auth.${NAS_HOSTNAME}/api/oauth/callback/pocketid
       - PROVIDERS_POCKETID_SCOPES=openid email profile groups
