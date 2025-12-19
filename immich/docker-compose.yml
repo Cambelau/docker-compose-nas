@@ -11,6 +11,8 @@ services:
       postgres: postgres
       immich: immich
       REDIS_HOSTNAME: immich_redis
+    ports:
+      - "2283:2283"
     volumes:
       - ${IMMICH_UPLOAD_LOCATION}:/data
       - /etc/localtime:/etc/localtime:ro
