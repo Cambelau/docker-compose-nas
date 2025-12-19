@@ -1,7 +1,7 @@
 # Deploy with: docker compose -f docker-compose.infra.yml up -d
 services:
   traefik:
-    image: ghcr.io/traefik/traefik:3.4
+    image: ghcr.io/traefik/traefik:3.6
     container_name: traefik
     restart: always
     environment:
@@ -79,9 +79,9 @@ services:
       - TZ=${TIMEZONE:-America/New_York}
       - PERIPHERY_DOCKER_NETWORK=docker-compose-nas
       - KOMODO_OIDC_ENABLED=true
-      - KOMODO_OIDC_PROVIDER=https://auth.heronix.org/application/o/komodo/
-      - KOMODO_OIDC_CLIENT_ID=${KOMODO_OIDC_CLIENT_ID:-komodo}
-      - KOMODO_OIDC_CLIENT_SECRET=${KOMODO_OIDC_CLIENT_SECRET:-}
+      - KOMODO_OIDC_PROVIDER=https://${POCKET_ID_HOSTNAME}
+      - KOMODO_OIDC_CLIENT_ID=${KOMODO_OIDC_CLIENT_ID}
+      - KOMODO_OIDC_CLIENT_SECRET=${KOMODO_OIDC_CLIENT_SECRET}
     labels:
       - komodo.skip=true
       - traefik.enable=true
@@ -90,7 +90,6 @@ services:
       - traefik.http.routers.komodo.tls.certresolver=myresolver
       - traefik.http.services.komodo.loadbalancer.server.port=9120
       - traefik.docker.network=docker-compose-nas
-      # - traefik.http.routers.komodo.middlewares=authentik@docker
 
   komodo-periphery:
     image: ghcr.io/moghtech/komodo-periphery:latest
@@ -114,112 +113,34 @@ services:
     labels:
       - komodo.skip=true
 
-  watchtower:
-    image: ghcr.io/containrrr/watchtower:latest
-    container_name: watchtower
-    restart: always
-    environment:
-      - WATCHTOWER_CLEANUP=true
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-
-  autoheal:
-    image: willfarrell/autoheal:latest
-    container_name: autoheal
-    restart: always
-    environment:
-      - AUTOHEAL_CONTAINER_LABEL=all
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-
-  authentik-postgres:
-    container_name: authentik-postgres
-    environment:
-      POSTGRES_DB: ${AUTHENTIK_POSTGRES_DB:-authentik}
-      POSTGRES_PASSWORD: ${AUTHENTIK_POSTGRES_PASSWORD}
-      POSTGRES_USER: ${AUTHENTIK_POSTGRES_USER}
-    healthcheck:
-      interval: 30s
-      retries: 5
-      start_period: 20s
-      test:
-        - CMD-SHELL
-        - pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}
-      timeout: 5s
-    image: docker.io/library/postgres:16-alpine
+  pocket-id:
+    image: ghcr.io/pocket-id/pocket-id:v1
+    container_name: pocket-id
     restart: unless-stopped
-    volumes:
-      - ${CONFIG_ROOT:-.}/authentik/postgres:/var/lib/postgresql/data
-
-  authentik-server:
-    container_name: authentik-server
-    command: server
-    depends_on:
-      authentik-postgres:
-        condition: service_healthy
     environment:
-      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
-      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_POSTGRES_DB:-authentik}
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRES_PASSWORD}
-      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_POSTGRES_USER}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.10.2}
+      - PUID=${USER_ID}
+      - PGID=${GROUP_ID}
+      - APP_URL=https://${POCKET_ID_HOSTNAME}/
+      - TRUST_PROXY=${POCKET_ID_TRUST_PROXY}
+      - ENCRYPTION_KEY=${POCKET_ID_ENCRYPTION_KEY}
     ports:
-      - ${COMPOSE_PORT_HTTP:-9000}:9000
-      - ${COMPOSE_PORT_HTTPS:-9443}:9443
-    restart: unless-stopped
+      - 1411:1411
     volumes:
-      - ${CONFIG_ROOT:-.}/authentik/media:/media
-      - ${CONFIG_ROOT:-.}/authentik/custom-templates:/templates
-      - "/etc/localtime:/etc/localtime:ro"
+      - "${CONFIG_ROOT:-.}/pocket-id/data:/app/data"
+    # Optional healthcheck
+    healthcheck:
+      test: [ "CMD", "/app/pocket-id", "healthcheck" ]
+      interval: 1m30s
+      timeout: 5s
+      retries: 2
+      start_period: 10s
     labels:
       - traefik.enable=true
-      - traefik.http.routers.authentik-server.entrypoints=web-secure
-      - traefik.http.routers.authentik-server.rule=Host(`${AUTHENTIK_HOSTNAME}`)
-      - traefik.http.routers.authentik-server.tls=true
-      - traefik.http.routers.authentik-server.tls.certresolver=myresolver
-      - traefik.http.services.authentik-server.loadbalancer.server.port=9000
+      - traefik.http.routers.pocket-id.rule=Host(`${POCKET_ID_HOSTNAME}`) && PathPrefix(`/`)
+      - traefik.http.routers.pocket-id.tls=true
+      - traefik.http.routers.pocket-id.tls.certresolver=myresolver
+      - traefik.http.services.pocket-id.loadbalancer.server.port=1411
       - traefik.docker.network=docker-compose-nas
-      
-  authentik-worker:
-    container_name: authentik-worker
-    command: worker
-    depends_on:
-      authentik-postgres:
-        condition: service_healthy
-    environment:
-      AUTHENTIK_POSTGRESQL__HOST: authentik-postgres
-      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_POSTGRES_DB:-authentik}
-      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRES_PASSWORD}
-      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_POSTGRES_USER}
-      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?secret key required}
-    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-2025.10.2}
-    restart: unless-stopped
-    user: root
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ${CONFIG_ROOT:-.}/authentik/media:/media
-      - ${CONFIG_ROOT:-.}/authentik/certs:/certs
-      - ${CONFIG_ROOT:-.}/authentik/custom-templates:/templates
-
-  authentik-proxy:
-      image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/proxy}:${AUTHENTIK_TAG:-2025.10.2}
-      container_name: authentik-proxy
-      depends_on:
-        authentik-server:
-          condition: service_started
-      environment:
-          AUTHENTIK_HOST: https://${AUTHENTIK_HOSTNAME}
-          AUTHENTIK_INSECURE: "true"
-          AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN}
-      labels:
-        - traefik.enable=true
-        - traefik.port=9000
-        - traefik.http.routers.authentik.rule=Host(`${AUTHENTIK_HOSTNAME}`) && PathPrefix(`/outpost.goauthentik.io/`)
-        - traefik.http.middlewares.authentik.forwardauth.address=http://authentik-proxy:9000/outpost.goauthentik.io/auth/traefik
-        - traefik.http.middlewares.authentik.forwardauth.trustForwardHeader=true
-        - traefik.http.middlewares.authentik.forwardauth.authResponseHeaders=X-authentik-username,X-authentik-groups,X-authentik-entitlements,X-authentik-email,X-authentik-name,X-authentik-uid,X-authentik-jwt,X-authentik-meta-jwks,X-authentik-meta-outpost,X-authentik-meta-provider,X-authentik-meta-app,X-authentik-meta-version
-      restart: unless-stopped
 
 networks:
   default:

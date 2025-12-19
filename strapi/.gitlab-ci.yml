@@ -1,0 +1,40 @@
+.rules:ci:service:
+  # Only select target services if requested
+  - if: "$TARGET_SERVICES && $SERVICE !~ $TARGET_SERVICES"
+    when: never
+  # Only run integration if service source code has changed
+  - changes: ["heka/$SERVICE/**/*", "heka/$SERVICE/*"]
+    when: on_success
+
+publish:strapi:
+  stage: !reference [.ci-stages, publish]
+  image: $CI_REGISTRY/heka/tools/buildx:master
+  interruptible: false
+  services:
+    - name: docker:27.3.0-dind
+      alias: docker
+      command: ["--tls=false"]
+  variables:
+    SERVICE: strapi
+    SERVICE_REGISTRY_IMAGE: $CI_REGISTRY_IMAGE/$SERVICE
+    SERVICE_REGISTRY_TAG: $CI_COMMIT_REF_SLUG
+    CONTEXT: heka
+    DOCKERFILE: $CONTEXT/$SERVICE/Dockerfile.prod
+  script:
+    - !reference [".script:docker-login"]
+    - >
+      docker buildx build
+      --build-arg "CI_REGISTRY=$CI_REGISTRY"
+      --build-arg "SENTRY_RELEASE=$CI_COMMIT_SHA"
+      --secret "id=SENTRY_AUTH_TOKEN,src="<(echo $SENTRY_AUTH_TOKEN)
+      $( [[ "$USE_DOCKER_CACHE" == "yes" ]] && echo "--cache-from=type=registry,ref=$SERVICE_REGISTRY_IMAGE:cache" )
+      --cache-to=type=registry,ref=$SERVICE_REGISTRY_IMAGE:cache,mode=max
+      --tag $SERVICE_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+      --file $DOCKERFILE
+      --push
+      $CONTEXT
+  tags:
+    - supercharged-ci-build
+  rules:
+    - !reference [".rules:ci"]
+    - !reference [".rules:ci:service"]

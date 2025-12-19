@@ -20,15 +20,7 @@ services:
       - traefik.http.routers.sonarr.tls=true
       - traefik.http.routers.sonarr.tls.certresolver=myresolver
       - traefik.http.services.sonarr.loadbalancer.server.port=8989
-      - homepage.group=Media
-      - homepage.name=Sonarr
-      - homepage.icon=sonarr.png
-      - homepage.href=/sonarr
-      - homepage.description=Series management
-      - homepage.weight=0
-      - homepage.widget.type=sonarr
-      - homepage.widget.url=http://sonarr:8989/sonarr
-      - homepage.widget.key=${SONARR_API_KEY}
+      - traefik.http.routers.sonarr.middlewares=tinyauth
   radarr:
     image: lscr.io/linuxserver/radarr
     container_name: radarr
@@ -50,15 +42,7 @@ services:
       - traefik.http.routers.radarr.tls=true
       - traefik.http.routers.radarr.tls.certresolver=myresolver
       - traefik.http.services.radarr.loadbalancer.server.port=7878
-      - homepage.group=Media
-      - homepage.name=Radarr
-      - homepage.icon=radarr.png
-      - homepage.href=/radarr
-      - homepage.description=Movies management
-      - homepage.weight=1
-      - homepage.widget.type=radarr
-      - homepage.widget.url=http://radarr:7878/radarr
-      - homepage.widget.key=${RADARR_API_KEY}
+      - traefik.http.routers.radarr.middlewares=tinyauth
   bazarr:
     image: lscr.io/linuxserver/bazarr
     container_name: bazarr
@@ -80,15 +64,7 @@ services:
       - traefik.http.routers.bazarr.tls=true
       - traefik.http.routers.bazarr.tls.certresolver=myresolver
       - traefik.http.services.bazarr.loadbalancer.server.port=6767
-      - homepage.group=Download
-      - homepage.name=Bazarr
-      - homepage.icon=bazarr.png
-      - homepage.href=/bazarr
-      - homepage.description=Subtitles management
-      - homepage.weight=4
-      - homepage.widget.type=bazarr
-      - homepage.widget.url=http://bazarr:6767/bazarr
-      - homepage.widget.key=${BAZARR_API_KEY}
+      - traefik.http.routers.bazarr.middlewares=tinyauth
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
@@ -109,15 +85,7 @@ services:
       - traefik.http.routers.prowlarr.tls=true
       - traefik.http.routers.prowlarr.tls.certresolver=myresolver
       - traefik.http.services.prowlarr.loadbalancer.server.port=9696
-      - homepage.group=Download
-      - homepage.name=Prowlarr
-      - homepage.icon=prowlarr.png
-      - homepage.href=/prowlarr
-      - homepage.description=Indexers management
-      - homepage.weight=1
-      - homepage.widget.type=prowlarr
-      - homepage.widget.url=http://prowlarr:9696/prowlarr
-      - homepage.widget.key=${PROWLARR_API_KEY}
+      - traefik.http.routers.prowlarr.middlewares=tinyauth
   flaresolverr:
     image: 21hsmw/flaresolverr:nodriver
     container_name: flaresolverr
@@ -164,7 +132,7 @@ services:
       - traefik.http.routers.qbittorrent.tls=true
       - traefik.http.routers.qbittorrent.tls.certresolver=myresolver
       - traefik.http.services.qbittorrent.loadbalancer.server.port=8080
-      - traefik.http.routers.qbittorrent.middlewares=qbittorrent-strip-slash,qbittorrent-stripprefix
+      - traefik.http.routers.qbittorrent.middlewares=qbittorrent-strip-slash,qbittorrent-stripprefix,tinyauth
       # https://github.com/qbittorrent/qBittorrent/issues/5693#issuecomment-552146296
       - traefik.http.middlewares.qbittorrent-stripprefix.stripPrefix.prefixes=/qbittorrent
       # https://community.traefik.io/t/middleware-to-add-the-if-needed/1895/19
@@ -172,16 +140,6 @@ services:
       - traefik.http.middlewares.qbittorrent-strip-slash.redirectregex.replacement=$$1/
       - traefik.http.middlewares.qbittorrent-strip-slash.redirectregex.permanent=false
       #- com.centurylinklabs.watchtower.depends-on=/vpn
-      - homepage.group=Download
-      - homepage.name=qBittorrent
-      - homepage.icon=qbittorrent.png
-      - homepage.href=/qbittorrent
-      - homepage.description=Bittorrent client
-      - homepage.weight=2
-      - homepage.widget.type=qbittorrent
-      - homepage.widget.url=http://vpn:8080
-      - homepage.widget.username=${QBITTORRENT_USERNAME}
-      - homepage.widget.password=${QBITTORRENT_PASSWORD}
   vpn:
     image: ghcr.io/thrnz/docker-wireguard-pia:latest
     container_name: vpn
@@ -255,6 +213,51 @@ services:
       - RADARR__BLOCK__PATH=/usr/blacklist.json
       - RADARR__INSTANCES__0__URL=http://radarr:7878/radarr
       - RADARR__INSTANCES__0__APIKEY=${RADARR_API_KEY}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.cleanuparr.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/cleanuparr`))
+      - traefik.http.routers.cleanuparr.tls=true
+      - traefik.http.routers.cleanuparr.tls.certresolver=myresolver
+      - traefik.http.services.cleanuparr.loadbalancer.server.port=8000
+      - traefik.http.routers.cleanuparr.middlewares=tinyauth
+  qbit_manage:
+    image: ghcr.io/stuffanthings/qbit_manage:latest
+    container_name: qbit_manage
+    volumes:
+      - ${CONFIG_ROOT:-.}/qbit_manage:/config:rw
+      - ${DOWNLOAD_ROOT}:/data/torrents:rw
+      - ${CONFIG_ROOT:-.}/qbittorrent:/qbittorrent:ro
+    environment:
+      - TZ=${TIMEZONE}
+      # Scheduler Configuration
+      - QBT_RUN=false
+      - QBT_SCHEDULE=1440
+      - QBT_CONFIG_DIR=/config
+      - QBT_LOGFILE=qbit_manage.log
+      # Command Flags
+      - QBT_RECHECK=false
+      - QBT_CAT_UPDATE=false
+      - QBT_TAG_UPDATE=false
+      - QBT_REM_UNREGISTERED=false
+      - QBT_REM_ORPHANED=false
+      - QBT_TAG_TRACKER_ERROR=false
+      - QBT_TAG_NOHARDLINKS=false
+      - QBT_SHARE_LIMITS=false
+      - QBT_SKIP_CLEANUP=false
+      - QBT_DRY_RUN=true
+      - QBT_STARTUP_DELAY=0
+      - QBT_SKIP_QB_VERSION_CHECK=false
+      - QBT_DEBUG=false
+      - QBT_TRACE=false
+      # Logging Configuration
+      - QBT_LOG_LEVEL=INFO
+      - QBT_LOG_SIZE=10
+      - QBT_LOG_COUNT=5
+      - QBT_DIVIDER==
+      - QBT_WIDTH=100
+    restart: on-failure:2
+    profiles:
+      - qbit_manage
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:latest
     container_name: sabnzbd
@@ -272,15 +275,6 @@ services:
       - traefik.http.routers.sabnzbd.tls=true
       - traefik.http.routers.sabnzbd.tls.certresolver=myresolver
       - traefik.http.services.sabnzbd.loadbalancer.server.port=8080
-      - homepage.group=Download
-      - homepage.name=Sabnzbd
-      - homepage.icon=sabnzbd.png
-      - homepage.href=/sabnzbd
-      - homepage.description=Usenet
-      - homepage.weight=3
-      - homepage.widget.type=sabnzbd
-      - homepage.widget.url=http://sabnzbd:8080/sabnzbd
-      - homepage.widget.key=${SABNZBD_API_KEY}
     profiles:
       - sabnzbd
   jellyfin:
@@ -290,7 +284,7 @@ services:
       - PUID=${USER_ID}
       - PGID=${GROUP_ID}
       - TZ=${TIMEZONE}
-      - JELLYFIN_PublishedServerUrl=${NAS_HOSTNAME}/jellyfin
+      - JELLYFIN_PublishedServerUrl=https://${NAS_HOSTNAME}/jellyfin
     volumes:
       - ${CONFIG_ROOT:-.}/jellyfin:/config
       - ${DATA_ROOT}:/data
@@ -311,15 +305,41 @@ services:
       - traefik.http.routers.jellyfin.tls=true
       - traefik.http.routers.jellyfin.tls.certresolver=myresolver
       - traefik.http.services.jellyfin.loadbalancer.server.port=8096
+  jellyseerr:
+    image: fallenbagel/jellyseerr:preview-seerr
+    container_name: jellyseerr
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${CONFIG_ROOT:-.}/jellyseerr:/app/config
+    restart: always
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "http://127.0.0.1:5055/api/v1/status",
+          "-qO",
+          "/dev/null",
+        ]
+      interval: 1m
+      retries: 10
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jellyseerr.rule=(Host(`${JELLYSEERR_HOSTNAME}`))
+      - traefik.http.routers.jellyseerr.tls=true
+      - traefik.http.routers.jellyseerr.tls.certresolver=myresolver
+      - traefik.http.services.jellyseerr.loadbalancer.server.port=5055
       - homepage.group=Media
-      - homepage.name=Jellyfin
-      - homepage.icon=jellyfin.png
-      - homepage.href=/jellyfin
-      - homepage.description=Media server
-      - homepage.weight=4
-      - homepage.widget.type=jellyfin
-      - homepage.widget.url=http://jellyfin:8096/jellyfin
-      - homepage.widget.key=${JELLYFIN_API_KEY}
+      - homepage.name=JellySeerr
+      - homepage.icon=jellyseerr.png
+      - homepage.href=https://${JELLYSEERR_HOSTNAME}
+      - homepage.description=Content Recommendations and Request Management
+      - homepage.weight=3
+      - homepage.widget.type=jellyseerr
+      - homepage.widget.url=http://jellyseerr:5055
+      - homepage.widget.key=${JELLYSEERR_API_KEY}
   calibre-web:
     image: lscr.io/linuxserver/calibre-web:latest
     container_name: calibre-web
@@ -343,52 +363,8 @@ services:
       - traefik.http.routers.calibre.tls=true
       - traefik.http.routers.calibre.tls.certresolver=myresolver
       - traefik.http.services.calibre.loadbalancer.server.port=8083
-      - homepage.group=Media
-      - homepage.name=Calibre-Web
-      - homepage.icon=calibre-web.png
-      - homepage.href=/calibre
-      - homepage.description=Books management
-      - homepage.weight=5
-      - homepage.widget.type=calibreweb
-      - homepage.widget.url=http://calibre-web:8083
-      - homepage.widget.username=${CALIBRE_USERNAME}
-      - homepage.widget.password=${CALIBRE_PASSWORD}
     profiles:
       - calibre-web
-  decluttarr:
-    image: ghcr.io/manimatter/decluttarr:latest
-    container_name: decluttarr
-    restart: no
-    environment:
-      - PUID=${USER_ID}
-      - PGID=${GROUP_ID}
-      - TZ=${TIMEZONE}
-      - RADARR_URL=http://radarr:7878/radarr
-      - RADARR_KEY=${RADARR_API_KEY}
-      - SONARR_URL=http://sonarr:8989/sonarr
-      - SONARR_KEY=${SONARR_API_KEY}
-      - QBITTORRENT_URL=http://vpn:8080
-      - QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME}
-      - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD}
-      - LOG_LEVEL=${DECLUTTARR_LOG_LEVEL:-INFO}
-      - TEST_RUN=${DECLUTTARR_TEST_RUN:-False}
-      - REMOVE_TIMER=${DECLUTTARR_REMOVE_TIMER:-10}
-      - REMOVE_FAILED=${DECLUTTARR_REMOVE_FAILED:-True}
-      - REMOVE_FAILED_IMPORTS=${DECLUTTARR_REMOVE_FAILED_IMPORTS:-True}
-      - REMOVE_METADATA_MISSING=${DECLUTTARR_REMOVE_METADATA_MISSING:-True}
-      - REMOVE_MISSING_FILES=${DECLUTTARR_REMOVE_MISSING_FILES:-True}
-      - REMOVE_ORPHANS=${DECLUTTARR_REMOVE_ORPHANS:-True}
-      - REMOVE_SLOW=${DECLUTTARR_REMOVE_SLOW:-True}
-      - REMOVE_STALLED=${DECLUTTARR_REMOVE_STALLED:-True}
-      - REMOVE_UNMONITORED=${DECLUTTARR_REMOVE_UNMONITORED:-True}
-      - RUN_PERIODIC_RESCANS=${DECLUTTARR_RUN_PERIODIC_RESCANS:-}
-      - PERMITTED_ATTEMPTS=${DECLUTTARR_PERMITTED_ATTEMPTS:-3}
-      - NO_STALLED_REMOVAL_QBIT_TAG=${DECLUTTARR_REMOVAL_QBIT_TAG:-"stalled"}
-      - MIN_DOWNLOAD_SPEED=${DECLUTTARR_MIN_DOWNLOAD_SPEED:-100}
-      - FAILED_IMPORT_MESSAGE_PATTERNS=${DECLUTTARR_FAILED_IMPORT_MESSAGE_PATTERNS:-}
-      - IGNORED_DOWNLOAD_CLIENTS=${DECLUTTARR_IGNORED_DOWNLOAD_CLIENTS:-}
-    profiles:
-      - decluttarr
   n8n:
     image: docker.n8n.io/n8nio/n8n:latest
     container_name: n8n
@@ -422,19 +398,13 @@ services:
       - ${CONFIG_ROOT:-.}/n8n/data:/data
     labels:
       - traefik.enable=true
-      - traefik.http.routers.n8n.rule=(Host(`n8n.${NAS_HOSTNAME}`) )
+      - traefik.http.routers.n8n.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/n8n`))
       - traefik.http.routers.n8n.tls=true
       - traefik.http.routers.n8n.tls.certresolver=myresolver
       - traefik.http.routers.n8n.priority=100
-      - traefik.http.routers.n8n.middlewares=n8n-strip-prefix
+      - traefik.http.routers.n8n.middlewares=tinyauth,n8n-strip-prefix
       - traefik.http.services.n8n.loadbalancer.server.port=5678
       - traefik.http.middlewares.n8n-strip-prefix.stripprefix.prefixes=/n8n
-      - homepage.group=Automation
-      - homepage.name=n8n
-      - homepage.icon=n8n.png
-      - homepage.href=/n8n
-      - homepage.description=Workflow automation
-      - homepage.weight=6
   n8n-postgres:
     image: docker.io/library/postgres:16-alpine
     container_name: n8n-postgres
@@ -462,33 +432,83 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
-  homepage:
-    image: ghcr.io/gethomepage/homepage:latest
-    container_name: homepage
-    environment:
-      - HOMEPAGE_VAR_TITLE=${HOMEPAGE_VAR_TITLE}
-      - HOMEPAGE_VAR_SEARCH_PROVIDER=${HOMEPAGE_VAR_SEARCH_PROVIDER}
-      - HOMEPAGE_VAR_HEADER_STYLE=${HOMEPAGE_VAR_HEADER_STYLE}
-      - HOMEPAGE_VAR_WEATHER_CITY=${HOMEPAGE_VAR_WEATHER_CITY}
-      - HOMEPAGE_VAR_WEATHER_LAT=${HOMEPAGE_VAR_WEATHER_LAT}
-      - HOMEPAGE_VAR_WEATHER_LONG=${HOMEPAGE_VAR_WEATHER_LONG}
-      - HOMEPAGE_VAR_WEATHER_TIME=${TIMEZONE}
-      - HOMEPAGE_VAR_WEATHER_UNIT=${HOMEPAGE_VAR_WEATHER_UNIT}
-      - HOMEPAGE_ALLOWED_HOSTS=${NAS_HOSTNAME}
-    volumes:
-      - ${CONFIG_ROOT:-.}/homepage:/app/config
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ${DATA_ROOT}:/data
+  strapi:
+    build:
+      context: .
+      dockerfile: ./strapi/Dockerfile.prod
+      args:
+        NODE_ENV: production
+        SERVICE_NAME: strapi
+    container_name: strapi
     restart: always
-    command:
-      [sh, -c, "cp -n /app/config/tpl/*.yaml /app/config && node server.js"]
+    depends_on:
+      strapi-postgres:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DATABASE_CLIENT=postgres
+      - DATABASE_HOST=strapi-postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=${STRAPI_POSTGRES_DB:-strapi}
+      - DATABASE_USERNAME=${STRAPI_POSTGRES_USER:-strapi}
+      - DATABASE_PASSWORD=${STRAPI_POSTGRES_PASSWORD}
+      - DATABASE_SSL=false
+      - JWT_SECRET=${STRAPI_JWT_SECRET}
+      - ADMIN_JWT_SECRET=${STRAPI_ADMIN_JWT_SECRET}
+      - API_TOKEN_SALT=${STRAPI_API_TOKEN_SALT}
+      - APP_KEYS=${STRAPI_APP_KEYS}
+      - TRANSFER_TOKEN_SALT=${STRAPI_TRANSFER_TOKEN_SALT}
+      - PUBLIC_URL=https://strapi.${NAS_HOSTNAME}
+      - HOST=0.0.0.0
+      - PORT=1337
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${CONFIG_ROOT:-.}/strapi/uploads:/opt/app/public/uploads
+      - ${CONFIG_ROOT:-.}/strapi/data:/opt/app/.tmp
     labels:
       - traefik.enable=true
-      - traefik.http.routers.homepage.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/`))
-      - traefik.http.routers.homepage.tls=true
-      - traefik.http.routers.homepage.tls.certresolver=myresolver
-      - traefik.http.services.homepage.loadbalancer.server.port=3000
-      - traefik.http.routers.homepage.middlewares=authentik@docker
+      - traefik.http.routers.strapi.rule=Host(`strapi.${NAS_HOSTNAME}`)
+      - traefik.http.routers.strapi.tls=true
+      - traefik.http.routers.strapi.tls.certresolver=myresolver
+      - traefik.http.services.strapi.loadbalancer.server.port=1337
+  strapi-postgres:
+    image: docker.io/library/postgres:16-alpine
+    container_name: strapi-postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=${STRAPI_POSTGRES_USER:-strapi}
+      - POSTGRES_PASSWORD=${STRAPI_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${STRAPI_POSTGRES_DB:-strapi}
+    volumes:
+      - ${CONFIG_ROOT:-.}/strapi/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${STRAPI_POSTGRES_USER:-strapi}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+  tinyauth:
+    image: ghcr.io/steveiliop56/tinyauth:v4
+    container_name: tinyauth
+    restart: always
+    environment:
+      - APP_URL=https://auth.${NAS_HOSTNAME}
+      - SECRET=${TINY_AUTH_SECRET_KEY}
+      - PROVIDERS_POCKETID_CLIENT_ID=${TINY_AUTH_CLIENT_ID}
+      - PROVIDERS_POCKETID_CLIENT_SECRET=${TINY_AUTH_CLIENT_SECRET}
+      - PROVIDERS_POCKETID_AUTH_URL=https://${NAS_HOSTNAME}/authorize
+      - PROVIDERS_POCKETID_TOKEN_URL=https://${NAS_HOSTNAME}/api/oidc/token
+      - PROVIDERS_POCKETID_USER_INFO_URL=https://${NAS_HOSTNAME}/api/oidc/userinfo
+      - PROVIDERS_POCKETID_REDIRECT_URL=https://auth.${NAS_HOSTNAME}/api/oauth/callback/pocketid
+      - PROVIDERS_POCKETID_SCOPES=openid email profile groups
+      - PROVIDERS_POCKETID_NAME=Pocket ID
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.tinyauth.rule=Host(`auth.${NAS_HOSTNAME}`)
+      - traefik.http.routers.tinyauth.tls=true
+      - traefik.http.routers.tinyauth.tls.certresolver=myresolver
+      - traefik.http.services.tinyauth.loadbalancer.server.port=3000
+      - traefik.http.middlewares.tinyauth.forwardauth.address=http://tinyauth:3000/api/auth/traefik
+      
 networks:
   default:
     name: docker-compose-nas

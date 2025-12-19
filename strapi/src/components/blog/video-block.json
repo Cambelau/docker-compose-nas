@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_blog_video_blocks",
+  "info": {
+    "displayName": "Video Block",
+    "icon": "play"
+  },
+  "options": {},
+  "attributes": {
+    "video": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "videos"
+      ]
+    }
+  },
+  "config": {}
+}
