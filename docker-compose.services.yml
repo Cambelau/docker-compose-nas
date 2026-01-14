@@ -219,6 +219,7 @@ services:
       - ${CONFIG_ROOT:-.}/cleanuparr/logs:/var/logs
       - ${CONFIG_ROOT:-.}/cleanuparr/ignored.txt:/usr/ignored.txt
       - ${CONFIG_ROOT:-.}/cleanuparr/blacklist.json:/usr/blacklist.json
+      - ${CONFIG_ROOT:-.}/cleanuparr:/config
     environment:
       - TZ=${TIMEZONE}
       - QUEUECLEANER__ENABLED=true
@@ -241,6 +242,7 @@ services:
       - RADARR__BLOCK__PATH=/usr/blacklist.json
       - RADARR__INSTANCES__0__URL=http://radarr:7878/radarr
       - RADARR__INSTANCES__0__APIKEY=${RADARR_API_KEY}
+      - BASE_PATH=/cleanuparr
     labels:
       - traefik.enable=true
       - traefik.http.routers.cleanuparr.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/cleanuparr`))
