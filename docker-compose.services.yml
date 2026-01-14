@@ -93,6 +93,7 @@ services:
       - PUID=${USER_ID}
       - PGID=${GROUP_ID}
       - TZ=${TIMEZONE}
+      - URL_BASE=/lidarr
     volumes:
       - ${CONFIG_ROOT:-.}/lidarr:/config
       - ${DATA_ROOT}:/data
