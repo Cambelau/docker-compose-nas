@@ -65,7 +65,7 @@ services:
       --clean false
       --source /data/acme.json --dest /certs'
     volumes:
-      - ./letsencrypt:/data
+      - ${CONFIG_ROOT:-.}/letsencrypt:/data
       - ./adguardhome/certs:/certs
     profiles:
       - adguardhome
