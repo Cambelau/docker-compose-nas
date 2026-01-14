@@ -38,9 +38,9 @@ services:
       - "53:53/udp"
       - "853:853/tcp"
     volumes:
-      - ./adguardhome/work:/opt/adguardhome/work
-      - ./adguardhome/conf:/opt/adguardhome/conf
-      - ./adguardhome/certs:/opt/adguardhome/certs
+      - ${CONFIG_ROOT:-.}/adguardhome/work:/opt/adguardhome/work
+      - ${CONFIG_ROOT:-.}/adguardhome/conf:/opt/adguardhome/conf
+      - ${CONFIG_ROOT:-.}/adguardhome/certs:/opt/adguardhome/certs
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=docker-compose-nas"
@@ -66,7 +66,7 @@ services:
       --source /data/acme.json --dest /certs'
     volumes:
       - ${CONFIG_ROOT:-.}/letsencrypt:/data
-      - ./adguardhome/certs:/certs
+      - ${CONFIG_ROOT:-.}/adguardhome/certs:/certs
     profiles:
       - adguardhome
 
