@@ -114,7 +114,7 @@ services:
       - komodo.skip=true
 
   pocket-id:
-    image: ghcr.io/pocket-id/pocket-id:v1
+    image: ghcr.io/pocket-id/pocket-id:v2
     container_name: pocket-id
     restart: unless-stopped
     environment:
