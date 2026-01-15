@@ -230,31 +230,6 @@ services:
       - traefik.http.routers.cleanuparr.middlewares=tinyauth
     profiles:
       - cleanuparr
-  huntarr:
-    image: ghcr.io/plexguide/huntarr:latest
-    container_name: huntarr
-    restart: always
-    environment:
-      - PUID=${USER_ID}
-      - PGID=${GROUP_ID}
-      - TZ=${TIMEZONE}
-      - BASE_URL=${NAS_HOSTNAME}/huntarr
-    volumes:
-      - ${CONFIG_ROOT:-.}/huntarr:/config
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.huntarr.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/huntarr`))
-      - traefik.http.routers.huntarr.tls=true
-      - traefik.http.routers.huntarr.tls.certresolver=myresolver
-      - traefik.http.services.huntarr.loadbalancer.server.port=9705
-      - traefik.http.middlewares.huntarr-slash.redirectregex.regex=^https?://([^/]+)/huntarr$
-      - traefik.http.middlewares.huntarr-slash.redirectregex.replacement=https://$${1}/huntarr/
-      - traefik.http.middlewares.huntarr-slash.redirectregex.permanent=true
-      - traefik.http.middlewares.huntarr-strip.stripprefix.prefixes=/huntarr
-      - traefik.http.middlewares.huntarr-xfp.headers.customrequestheaders.X-Forwarded-Prefix=/huntarr
-      - traefik.http.routers.huntarr.middlewares=huntarr-slash,huntarr-strip,huntarr-xfp
-    profiles:
-      - huntarr
   qbit_manage:
     image: ghcr.io/stuffanthings/qbit_manage:latest
     container_name: qbit_manage
