@@ -238,6 +238,7 @@ services:
       - PUID=${USER_ID}
       - PGID=${GROUP_ID}
       - TZ=${TIMEZONE}
+      - BASE_URL=${NAS_HOSTNAME}/huntarr
     volumes:
       - ${CONFIG_ROOT:-.}/huntarr:/config
     labels:
@@ -311,36 +312,6 @@ services:
       - traefik.http.services.sabnzbd.loadbalancer.server.port=8080
     profiles:
       - sabnzbd
-  autobrr:
-    container_name: autobrr
-    image: ghcr.io/autobrr/autobrr:latest
-    restart: always
-    environment:
-      - TZ=${TIMEZONE}
-      - AUTOBRR__BASE_URL=/autobrr/
-    user: ${USER_ID}:${GROUP_ID}
-    volumes:
-      - ${CONFIG_ROOT:-.}/autobrr:/config
-    labels:
-      - traefik.enable=true
-      - traefik.http.middlewares.autobrr-strip.stripprefix.prefixes=/autobrr
-      - traefik.http.middlewares.autobrr-strip.stripprefix.forceSlash=true
-      - traefik.http.routers.autobrr.rule=(Host(`${NAS_HOSTNAME}`) && PathPrefix(`/autobrr`))
-      - traefik.http.routers.autobrr.tls=true
-      - traefik.http.routers.autobrr.tls.certresolver=myresolver
-      - traefik.http.services.autobrr.loadbalancer.server.port=7474
-      - traefik.http.routers.autobrr.middlewares=autobrr-strip
-      - homepage.group=Download
-      - homepage.name=Autobrr
-      - homepage.icon=autobrr.png
-      - homepage.href=/autobrr
-      - homepage.description=Torrent download automation
-      - homepage.weight=7
-      - homepage.widget.type=autobrr
-      - homepage.widget.url=http://autobrr:7474
-      - homepage.widget.key=${AUTOBRR_API_KEY}
-    profiles:
-      - autobrr
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
