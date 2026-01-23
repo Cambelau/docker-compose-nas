@@ -239,23 +239,26 @@ services:
       - ${CONFIG_ROOT:-.}/qbittorrent:/qbittorrent:ro
     environment:
       - TZ=${TIMEZONE}
+      # qBittorrent credentials (required for config.yml)
+      - QBITTORRENT_USER=${QBITTORRENT_USER:-admin}
+      - QBITTORRENT_PASS=${QBITTORRENT_PASS}
       # Scheduler Configuration
-      - QBT_RUN=false
-      - QBT_SCHEDULE=1440
+      - QBT_RUN=true
+      - QBT_SCHEDULE=1440  # Run every 24 hours
       - QBT_CONFIG_DIR=/config
       - QBT_LOGFILE=qbit_manage.log
-      # Command Flags
-      - QBT_RECHECK=false
-      - QBT_CAT_UPDATE=false
-      - QBT_TAG_UPDATE=false
-      - QBT_REM_UNREGISTERED=false
-      - QBT_REM_ORPHANED=false
-      - QBT_TAG_TRACKER_ERROR=false
-      - QBT_TAG_NOHARDLINKS=false
-      - QBT_SHARE_LIMITS=false
-      - QBT_SKIP_CLEANUP=false
-      - QBT_DRY_RUN=true
-      - QBT_STARTUP_DELAY=0
+      # Command Flags - Enable actions you want to perform
+      - QBT_RECHECK=false          # Recheck paused torrents sorted by lowest size
+      - QBT_CAT_UPDATE=true        # Update categories based on config
+      - QBT_TAG_UPDATE=true        # Update tags based on config
+      - QBT_REM_UNREGISTERED=true  # Remove unregistered torrents
+      - QBT_REM_ORPHANED=true      # Remove orphaned files
+      - QBT_TAG_TRACKER_ERROR=true # Tag torrents with tracker errors
+      - QBT_TAG_NOHARDLINKS=true   # Tag torrents without hardlinks
+      - QBT_SHARE_LIMITS=true      # Apply share limits
+      - QBT_SKIP_CLEANUP=false     # Don't skip cleanup
+      - QBT_DRY_RUN=true           # IMPORTANT: Set to false when ready to apply changes
+      - QBT_STARTUP_DELAY=30       # Wait 30s on startup for qBittorrent to be ready
       - QBT_SKIP_QB_VERSION_CHECK=false
       - QBT_DEBUG=false
       - QBT_TRACE=false
