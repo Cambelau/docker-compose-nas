@@ -318,41 +318,27 @@ services:
       - traefik.http.routers.jellyfin.tls=true
       - traefik.http.routers.jellyfin.tls.certresolver=myresolver
       - traefik.http.services.jellyfin.loadbalancer.server.port=8096
-  jellyseerr:
-    image: fallenbagel/jellyseerr:preview-seerr
-    container_name: jellyseerr
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    container_name: seerr
     environment:
       - LOG_LEVEL=debug
       - TZ=${TIMEZONE}
     volumes:
       - ${CONFIG_ROOT:-.}/jellyseerr:/app/config
-    restart: always
+    restart: unless-stopped
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "http://127.0.0.1:5055/api/v1/status",
-          "-qO",
-          "/dev/null",
-        ]
-      interval: 1m
-      retries: 10
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
     labels:
       - traefik.enable=true
-      - traefik.http.routers.jellyseerr.rule=(Host(`${JELLYSEERR_HOSTNAME}`))
-      - traefik.http.routers.jellyseerr.tls=true
-      - traefik.http.routers.jellyseerr.tls.certresolver=myresolver
-      - traefik.http.services.jellyseerr.loadbalancer.server.port=5055
-      - homepage.group=Media
-      - homepage.name=JellySeerr
-      - homepage.icon=jellyseerr.png
-      - homepage.href=https://${JELLYSEERR_HOSTNAME}
-      - homepage.description=Content Recommendations and Request Management
-      - homepage.weight=3
-      - homepage.widget.type=jellyseerr
-      - homepage.widget.url=http://jellyseerr:5055
-      - homepage.widget.key=${JELLYSEERR_API_KEY}
+      - traefik.http.routers.seerr.rule=(Host(`${SEERR_HOSTNAME}`))
+      - traefik.http.routers.seerr.tls=true
+      - traefik.http.routers.seerr.tls.certresolver=myresolver
+      - traefik.http.services.seerr.loadbalancer.server.port=5055
   calibre-web:
     image: lscr.io/linuxserver/calibre-web:latest
     container_name: calibre-web
