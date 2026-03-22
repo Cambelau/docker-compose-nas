@@ -6,26 +6,25 @@ ENV \
     NODE_ENV=${NODE_ENV} \
     SERVICE_NAME=strapi
 
-WORKDIR /opt/
+WORKDIR /opt/app
 COPY ${SERVICE_NAME}/package.json ${SERVICE_NAME}/package-lock.json ./
 RUN npm install -g node-gyp
-RUN npm config set fetch-retry-maxtimeout 600000 -g && npm install --omit=dev
-RUN npm rebuild @swc/core
-ENV PATH=/opt/node_modules/.bin:$PATH
-WORKDIR /opt/app
+RUN npm config set fetch-retry-maxtimeout 600000 -g && npm ci
 COPY ${SERVICE_NAME} .
-RUN npm run build
+RUN npm install @swc/core-linux-arm64-musl @rollup/rollup-linux-arm64-musl --save-optional && \
+    npm run build && npm prune --omit=dev
+ENV PATH=/opt/app/node_modules/.bin:$PATH
 
 # Creating final runtime image
 FROM node:22-alpine
-RUN apk add --no-cache vips-dev
+RUN apk add --no-cache vips-dev && \
+    apk upgrade --no-cache
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
-WORKDIR /opt/
-COPY --from=build /opt/node_modules ./node_modules
 WORKDIR /opt/app
+COPY --from=build /opt/app/node_modules ./node_modules
 COPY --from=build /opt/app ./
-ENV PATH=/opt/node_modules/.bin:$PATH
+ENV PATH=/opt/app/node_modules/.bin:$PATH
 
 RUN chown -R node:node /opt/app
 USER node
