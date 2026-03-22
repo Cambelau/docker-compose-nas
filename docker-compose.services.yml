@@ -321,9 +321,8 @@ services:
   seerr:
     image: ghcr.io/seerr-team/seerr:latest
     container_name: seerr
+    user: "${USER_ID}:${GROUP_ID}"
     environment:
-      - PUID=${USER_ID}
-      - PGID=${GROUP_ID}
       - LOG_LEVEL=debug
       - TZ=${TIMEZONE}
     volumes:
